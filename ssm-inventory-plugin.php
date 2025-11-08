@@ -17,13 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// 🟢 یہاں سے [Plugin Constants (FIXED)] شروع ہو رہا ہے
-// Define constants globally (FIX for activation hook)
+// 🟢 یہاں سے [Plugin Constants] شروع ہو رہا ہے
 define( 'SSM_PLUGIN_FILE', __FILE__ );
 define( 'SSM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'SSM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'SSM_PLUGIN_VERSION', '1.0.0' );
-// 🔴 یہاں پر [Plugin Constants (FIXED)] ختم ہو رہا ہے
+// 🔴 یہاں پر [Plugin Constants] ختم ہو رہا ہے
 
 
 /**
@@ -34,8 +33,9 @@ final class SSM_Inventory_Plugin {
     /**
      * Plugin version.
      */
-    const VERSION = SSM_PLUGIN_VERSION; // Use the global constant
-/**
+    const VERSION = SSM_PLUGIN_VERSION;
+
+    /**
      * Constructor.
      */
     public function __construct() {
@@ -103,117 +103,6 @@ final class SSM_Inventory_Plugin {
             'ssm-rate-plans', // Slug
             array( $this, 'render_admin_page_rate_plans' ) // Callback
         );
-        // 🟢 یہاں سے [AJAX Handlers - Unit Types] شروع ہو رہا ہے
-
-    /**
-     * AJAX handler to get all unit types.
-     */
-    public function ajax_get_unit_types() {
-        // Security checks (Rule 6)
-        check_ajax_referer( 'ssm_ajax_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'ssm-inventory' ) ), 403 );
-        }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'ssm_unit_types';
-
-        // DB Query (Rule 6: $wpdb->prepare)
-        $results = $wpdb->get_results(
-            $wpdb->prepare( "SELECT * FROM $table_name ORDER BY id DESC" )
-        );
-
-        if ( is_wp_error( $results ) ) {
-            wp_send_json_error( array( 'message' => $results->get_error_message() ), 500 );
-        }
-
-        wp_send_json_success( $results );
-    }
-
-    /**
-     * AJAX handler to save (create/update) a unit type.
-     */
-    public function ajax_save_unit_type() {
-        // Security checks (Rule 6)
-        check_ajax_referer( 'ssm_ajax_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'ssm-inventory' ) ), 403 );
-        }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'ssm_unit_types';
-
-        // Sanitize input data (Rule 6)
-        $unit_type_id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
-        $type_name = isset( $_POST['type_name'] ) ? sanitize_text_field( $_POST['type_name'] ) : '';
-        $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
-        $capacity = isset( $_POST['capacity'] ) ? absint( $_POST['capacity'] ) : 0;
-        $features_json = isset( $_POST['features_json'] ) ? wp_kses_post( $_POST['features_json'] ) : '{}'; // Use wp_kses_post for JSON-like text
-        $status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : 'active';
-
-        // Validation
-        if ( empty( $type_name ) || empty( $category ) ) {
-            wp_send_json_error( array( 'message' => __( 'Type Name and Category are required.', 'ssm-inventory' ) ), 400 );
-        }
-        
-        // Validate JSON
-        if ( ! empty( $features_json ) ) {
-            json_decode( $features_json );
-            if ( json_last_error() !== JSON_ERROR_NONE ) {
-                wp_send_json_error( array( 'message' => __( 'Invalid Features JSON format.', 'ssm-inventory' ) ), 400 );
-            }
-        } else {
-            $features_json = '{}';
-        }
-
-
-        $data = array(
-            'type_name'     => $type_name,
-            'category'      => $category,
-            'capacity'      => $capacity,
-            'features_json' => $features_json,
-            'status'        => $status,
-        );
-
-        $format = array(
-            '%s', // type_name
-            '%s', // category
-            '%d', // capacity
-            '%s', // features_json
-            '%s', // status
-        );
-
-        if ( $unit_type_id > 0 ) {
-            // Update existing record
-            $result = $wpdb->update(
-                $table_name,
-                $data,
-                array( 'id' => $unit_type_id ), // WHERE
-                $format,
-                array( '%d' ) // WHERE format
-            );
-        } else {
-            // Insert new record
-            $result = $wpdb->insert( $table_name, $data, $format );
-            if($result) {
-                $unit_type_id = $wpdb->insert_id;
-            }
-        }
-
-        if ( $result === false ) {
-            wp_send_json_error( array( 'message' => __( 'Database error. Could not save unit type.', 'ssm-inventory' ) ), 500 );
-        }
-
-        // Fetch the saved item to return to the frontend
-        $saved_item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $unit_type_id ) );
-
-        wp_send_json_success( array(
-            'message' => __( 'Unit Type saved successfully!', 'ssm-inventory' ),
-            'item'    => $saved_item
-        ) );
-    }
-
-    // 🔴 یہاں پر [AJAX Handlers - Unit Types] ختم ہو رہا ہے
     }
 
     /**
@@ -718,7 +607,7 @@ final class SSM_Inventory_Plugin {
                         </div>
                         <div class="ssm-form-sidebar-footer">
                             <button class="ssm-button ssm-button-primary"><?php _e( 'Save', 'ssm-inventory' ); ?></button>
-                            <button class="ssm-button ssm-button-tertiary"><?php _e( 'Cancel', 'ssm-inventory' ); ?></button>
+                            <button class_button ssm-button-tertiary"><?php _e( 'Cancel', 'ssm-inventory' ); ?></button>
                         </div>
                     </section>
                     </div>
@@ -1130,6 +1019,7 @@ final class SSM_Inventory_Plugin {
                                     <div class="ssm-img-placeholder"></div>
                                     <div class="ssm-img-placeholder"></div>
                                     <div class="ssm-img-placeholder"></div>
+                                Services(ssm_services)
                                 </div>
                             </div>
                         </div>
@@ -1151,6 +1041,118 @@ final class SSM_Inventory_Plugin {
             </div> <?php
         echo '</template>';
     }
+    
+    // 🟢 یہاں سے [AJAX Handlers - Unit Types] شروع ہو رہا ہے
+
+    /**
+     * AJAX handler to get all unit types.
+     */
+    public function ajax_get_unit_types() {
+        // Security checks (Rule 6)
+        check_ajax_referer( 'ssm_ajax_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'ssm-inventory' ) ), 403 );
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ssm_unit_types';
+
+        // DB Query (Rule 6: $wpdb->prepare)
+        $results = $wpdb->get_results(
+            $wpdb->prepare( "SELECT * FROM $table_name ORDER BY id DESC" )
+        );
+
+        if ( is_wp_error( $results ) ) {
+            wp_send_json_error( array( 'message' => $results->get_error_message() ), 500 );
+        }
+
+        wp_send_json_success( $results );
+    }
+
+    /**
+     * AJAX handler to save (create/update) a unit type.
+     */
+    public function ajax_save_unit_type() {
+        // Security checks (Rule 6)
+        check_ajax_referer( 'ssm_ajax_nonce', 'nonce' );
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'ssm-inventory' ) ), 403 );
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'ssm_unit_types';
+
+        // Sanitize input data (Rule 6)
+        $unit_type_id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+        $type_name = isset( $_POST['type_name'] ) ? sanitize_text_field( $_POST['type_name'] ) : '';
+        $category = isset( $_POST['category'] ) ? sanitize_text_field( $_POST['category'] ) : '';
+        $capacity = isset( $_POST['capacity'] ) ? absint( $_POST['capacity'] ) : 0;
+        $features_json = isset( $_POST['features_json'] ) ? wp_kses_post( $_POST['features_json'] ) : '{}'; // Use wp_kses_post for JSON-like text
+        $status = isset( $_POST['status'] ) ? sanitize_text_field( $_POST['status'] ) : 'active';
+
+        // Validation
+        if ( empty( $type_name ) || empty( $category ) ) {
+            wp_send_json_error( array( 'message' => __( 'Type Name and Category are required.', 'ssm-inventory' ) ), 400 );
+        }
+        
+        // Validate JSON
+        if ( ! empty( $features_json ) ) {
+            json_decode( $features_json );
+            if ( json_last_error() !== JSON_ERROR_NONE ) {
+                wp_send_json_error( array( 'message' => __( 'Invalid Features JSON format.', 'ssm-inventory' ) ), 400 );
+            }
+        } else {
+            $features_json = '{}';
+        }
+
+
+        $data = array(
+            'type_name'     => $type_name,
+            'category'      => $category,
+            'capacity'      => $capacity,
+            'features_json' => $features_json,
+            'status'        => $status,
+        );
+
+        $format = array(
+            '%s', // type_name
+            '%s', // category
+            '%d', // capacity
+            '%s', // features_json
+            '%s', // status
+        );
+
+        if ( $unit_type_id > 0 ) {
+            // Update existing record
+            $result = $wpdb->update(
+                $table_name,
+                $data,
+                array( 'id' => $unit_type_id ), // WHERE
+                $format,
+                array( '%d' ) // WHERE format
+            );
+        } else {
+            // Insert new record
+            $result = $wpdb->insert( $table_name, $data, $format );
+            if($result) {
+                $unit_type_id = $wpdb->insert_id;
+            }
+        }
+
+        if ( $result === false ) {
+            wp_send_json_error( array( 'message' => __( 'Database error. Could not save unit type.', 'ssm-inventory' ) ), 500 );
+        }
+
+        // Fetch the saved item to return to the frontend
+        $saved_item = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table_name WHERE id = %d", $unit_type_id ) );
+
+        wp_send_json_success( array(
+            'message' => __( 'Unit Type saved successfully!', 'ssm-inventory' ),
+            'item'    => $saved_item
+        ) );
+    }
+
+    // 🔴 یہاں پر [AJAX Handlers - Unit Types] ختم ہو رہا ہے
 
     // 🔴 یہاں پر [Admin Page Render Functions] ختم ہو رہا ہے
 

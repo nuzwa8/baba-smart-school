@@ -207,3 +207,36 @@ public function render_admission_page() {
 // 🟢 نوٹ: آپ کو 'pages' نام کا ایک نیا فولڈر بنانا ہو گا، اور اس کے اندر اگلی فائل رکھنی ہو گی۔
 
 // ✅ Syntax verified block end
+/** Part 6 — Students List: Core File Update for Dedicated Page & AJAX */
+
+// BSSMS_Core کلاس کے اندر، includes() فنکشن کا نیا اور مکمل کوڈ (پُرانے کی جگہ پر):
+// قاعدہ 30: ہر صفحہ کی الگ فائلیں
+private function includes() {
+    // پیج لاجک فائلیں شامل کریں (قاعدہ 30 کے مطابق)
+    require_once BSSMS_PATH . 'pages/bssms-admission-page.php';
+    require_once BSSMS_PATH . 'pages/bssms-students-list-page.php'; // نیا پیج شامل
+    // مزید صفحات یہاں شامل ہوں گے:
+    // require_once BSSMS_PATH . 'pages/bssms-courses-setup-page.php';
+    // require_once BSSMS_PATH . 'pages/bssms-settings-page.php';
+}
+
+// BSSMS_Core کلاس کے اندر، hooks() فنکشن کا نیا اور مکمل کوڈ (پُرانے کی جگہ پر):
+private function hooks() {
+    // (PHP) ایڈمن مینو اور اثاثے لوڈ کریں۔
+    add_action( 'admin_menu', array( $this, 'add_plugin_menu' ) );
+    add_action( 'admin_enqueue_scripts', array( 'BSSMS_Assets', 'enqueue_admin_assets' ) );
+
+    // (AJAX) ہینڈلر کو رجسٹر کریں۔
+    add_action( 'wp_ajax_bssms_save_admission', array( 'BSSMS_Ajax', 'handle_save_admission' ) );
+    add_action( 'wp_ajax_bssms_fetch_students', array( 'BSSMS_Ajax', 'handle_fetch_students' ) );
+    add_action( 'wp_ajax_bssms_translate_text', array( 'BSSMS_Ajax', 'handle_translate_text' ) );
+    add_action( 'wp_ajax_bssms_delete_admission', array( 'BSSMS_Ajax', 'handle_delete_admission' ) ); // نیا AJAX ہینڈلر
+}
+
+// BSSMS_Core کلاس کے اندر، render_students_list_page() فنکشن کا نیا اور مکمل کوڈ (پُرانے کی جگہ پر):
+public function render_students_list_page() {
+    // یہاں صرف سرشار کلاس کا فنکشن کال ہو گا
+    BSSMS_Students_List_Page::render_page();
+}
+
+// ✅ Syntax verified block end

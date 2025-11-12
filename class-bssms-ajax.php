@@ -502,3 +502,41 @@ public static function handle_reset_defaults() {
 // 🔴 یہاں پر مزید (AJAX) ہینڈلرز ختم ہو رہے ہیں۔
 
 // ✅ Syntax verified block end
+/** Part 17 — Dashboard: AJAX Handler for All Data */
+
+// BSSMS_Ajax کلاس کے اندر، نیا handle_fetch_dashboard_data() فنکشن شامل کریں۔
+
+/**
+ * ڈیش بورڈ کے تمام KPIs، چارٹ، اور حالیہ ڈیٹا کو ایک ساتھ حاصل کرنے کا AJAX ہینڈلر۔
+ */
+public static function handle_fetch_dashboard_data() {
+    check_ajax_referer( 'bssms_fetch_dashboard_data', 'nonce' ); // نیا Nonce: bssms_fetch_dashboard_data
+
+    // قاعدہ 4: current_user_can()
+    if ( ! current_user_can( 'bssms_manage_admissions' ) ) {
+        wp_send_json_error( array( 'message_ur' => 'آپ کے پاس ڈیش بورڈ دیکھنے کی اجازت نہیں ہے۔' ) );
+    }
+
+    // چارٹ کی مدت (Period) حاصل کریں
+    $period = sanitize_text_field( wp_unslash( $_POST['period'] ?? '30days' ) );
+    
+    // ڈیٹا بیس سے تمام ڈیٹا لائیں
+    $kpis = BSSMS_DB::get_dashboard_kpis();
+    $admissions_chart_data = BSSMS_DB::get_admissions_over_time( $period );
+    $recent_admissions = BSSMS_DB::get_recent_admissions( 5 );
+
+    $response = array(
+        'success' => true,
+        'message_ur' => 'ڈیش بورڈ ڈیٹا کامیابی سے لوڈ ہو گیا ہے۔',
+        'kpis' => $kpis,
+        'admissions_chart_data' => $admissions_chart_data,
+        'recent_admissions' => $recent_admissions,
+        'period' => $period,
+    );
+
+    wp_send_json_success( $response );
+}
+
+// 🔴 یہاں پر مزید (AJAX) ہینڈلرز ختم ہو رہے ہیں۔
+
+// ✅ Syntax verified block end
